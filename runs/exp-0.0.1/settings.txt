@@ -1,0 +1,65 @@
+data_root: ./data/
+exp:
+  cache: 2
+  device: &id001 !!python/object/apply:torch.device
+  - cuda
+  exp_dir: ./runs
+  exp_name: exp-0.0.1
+  log_freq: 20
+  log_to_file: true
+  log_to_stdout: true
+  n_workers: 1
+  pin_memory: true
+  proj_name: torch-kwt-1
+  save_dir: ./runs/exp-0.0.1
+  val_freq: 1
+  wandb: false
+  wandb_api_key: <path/to/api/key>
+hparams:
+  audio:
+    center: false
+    hop_length: 160
+    n_fft: 480
+    n_mels: 40
+    sr: 16000
+    win_length: 480
+  augment:
+    spec_aug:
+      freq_mask_width: 7
+      n_freq_masks: 2
+      n_time_masks: 2
+      time_mask_width: 25
+  batch_size: 512
+  device: *id001
+  l_smooth: 0.1
+  model:
+    depth: 12
+    dim: 64
+    dropout: 0.0
+    emb_dropout: 0.1
+    heads: 1
+    input_res:
+    - 40
+    - 98
+    mlp_dim: 256
+    name: null
+    num_classes: 35
+    patch_res:
+    - 40
+    - 1
+    pre_norm: false
+  n_epochs: 10
+  optimizer:
+    opt_kwargs:
+      lr: 0.001
+      weight_decay: 0.1
+    opt_type: adamw
+  scheduler:
+    max_epochs: 140
+    n_warmup: 10
+    scheduler_type: cosine_annealing
+  seed: 0
+label_map: ./data/label_map.json
+test_list_file: ./data/testing_list.txt
+train_list_file: ./data/training_list.txt
+val_list_file: ./data/validation_list.txt
