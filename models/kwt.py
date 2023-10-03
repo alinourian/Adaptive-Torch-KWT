@@ -228,21 +228,21 @@ class KWT(nn.Module):
         return filters
         
     def forward(self, x):
-        # fm, bw = self.filter_net(x)
+        fm, bw = self.filter_net(x)
 
-        # bs = fm.shape[0]
-        # filters = self.create_filters(bs, fm, bw, donorm=False)
+        bs = fm.shape[0]
+        filters = self.create_filters(bs, fm, bw, donorm=False)
 
-        # x_filtered = torch.matmul(filters, torch.transpose(x, 2, 3))
+        x_filtered = torch.matmul(filters, torch.transpose(x, 2, 3))
 
-        # x_log = 10.0 * torch.log10(x_filtered + 1e-9)
-        # x = torch.matmul(self.dct_filters, x_log)
+        x_log = 10.0 * torch.log10(x_filtered + 1e-9)
+        x = torch.matmul(self.dct_filters, x_log)
 
-        print(f'1. {x.shape}')
+        # print(f'1. {x.shape}')
 
         x = self.to_patch_embedding(x)
 
-        print(f'2. after patch embedding: {x.shape}')
+        # print(f'2. after patch embedding: {x.shape}')
         
         b, n, _ = x.shape
 
