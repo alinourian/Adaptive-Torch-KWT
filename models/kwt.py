@@ -127,26 +127,34 @@ class EncoderLayer(nn.Module):
 
 
 class FilterAttention(nn.Module):
-    def __init__(self, output_size=40, d_model=241, num_heads=1, num_layers=1, d_ff=256, max_seq_length=98, dropout=0.1):
+    def __init__(self, output_size=40, d_model=116, num_heads=2, num_layers=1, d_ff=128, max_seq_length=98, dropout=0.1):
         super(FilterAttention, self).__init__()
 
         self.encoder_layers = nn.ModuleList([EncoderLayer(d_model, num_heads, d_ff, dropout) for _ in range(num_layers)])
 
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(1, 5), bias=False),
+            nn.GELU(),
+            nn.AvgPool2d(kernel_size=(2, 2)),
+            nn.Conv2d(in_channels=32, out_channels=1, kernel_size=(1, 3), bias=False),
+            nn.GELU(),
+        )
+
         self.fc_mean = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(241, output_size),
+            nn.Linear(116, output_size),
             nn.Sigmoid(),
         )
         self.fc_std = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(241, output_size),
+            nn.Linear(116, output_size),
             nn.Sigmoid(),
         )
 
     def forward(self, src):
-        # conv_output = self.conv(src)
-        # enc_output = conv_output.squeeze()
-        enc_output = src.squeeze()
+        conv_output = self.conv(src)
+        enc_output = conv_output.squeeze()
+        # enc_output = src.squeeze()
         for enc_layer in self.encoder_layers:
             enc_output = enc_layer(enc_output)
         enc_output = enc_output.mean(dim=1)
