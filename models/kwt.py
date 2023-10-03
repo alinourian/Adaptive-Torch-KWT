@@ -193,6 +193,8 @@ class KWT(nn.Module):
         )
 
         self.filter_net = FilterAttention()
+        self.n_fft = 480
+        self.device = 'cuda'
         self.dct_filters = self.dct(dct_filter_num=40, filter_len=40)
     
     def dct(self, dct_filter_num, filter_len):
@@ -204,11 +206,11 @@ class KWT(nn.Module):
         for i in range(1, dct_filter_num):
             basis[i, :] = torch.cos(i * samples) * torch.sqrt(2.0 / torch.tensor(filter_len, dtype=torch.float32))
 
-        return basis
+        return basis.to(self.device)
 
     def create_filters(self, bs, fm, bw, donorm=False):
-        x = torch.zeros((bs, self.n_fft // 2 + 1)) # device=device
-        x[:, :] = torch.arange(0, self.n_fft // 2 + 1) #.to(device)
+        x = torch.zeros((bs, self.n_fft // 2 + 1), device=self.device) # device=device
+        x[:, :] = torch.arange(0, self.n_fft // 2 + 1).to(self.device)
         fm = (self.n_fft / 2 + 1) * fm
         bw = 4 * bw + 0.2
 
@@ -216,7 +218,7 @@ class KWT(nn.Module):
         l_filter = self.n_fft // 2 + 1
 
 
-        filters = torch.zeros((bs, 1, n_filters, l_filter)) # device=device
+        filters = torch.zeros((bs, 1, n_filters, l_filter), device=self.device) # device=device
         for nf in range(n_filters):
             if donorm:
                 filters[:, 0, nf, :] = (torch.exp(-(x.T - fm[:, nf]) ** 2 / (2 * bw[:, nf] ** 2)) * (torch.exp(-fm[:, nf] * 0.01)) ).T
