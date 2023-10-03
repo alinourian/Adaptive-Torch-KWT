@@ -171,7 +171,7 @@ def normalize_audio(audio):
     return audio
 
 def frame_audio(audio, n_fft=480):
-    audio = np.pad(audio, int(n_fft / 2), mode='reflect')
+    # audio = np.pad(audio, int(n_fft / 2), mode='reflect')
     frame_len = 160
     frame_num = int((len(audio) - n_fft) / frame_len) + 1
     frames = np.zeros((frame_num, n_fft))
@@ -262,6 +262,6 @@ def get_loader(data_list, config, train=True):
         shuffle=True if train else False
     )
 
-    return dataloader, dataset
+    return dataloader
 
     
