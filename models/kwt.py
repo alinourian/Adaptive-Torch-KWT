@@ -143,11 +143,10 @@ class FilterAttention(nn.Module):
             nn.Sigmoid(),
         )
 
-
     def forward(self, src):
-        conv_output = self.conv(src)
-
-        enc_output = conv_output.squeeze()
+        # conv_output = self.conv(src)
+        # enc_output = conv_output.squeeze()
+        enc_output = src.squeeze()
         for enc_layer in self.encoder_layers:
             enc_output = enc_layer(enc_output)
         enc_output = enc_output.mean(dim=1)
