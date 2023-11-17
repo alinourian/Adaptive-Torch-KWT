@@ -1,3 +1,5 @@
+(All of the following are the explanations and results of Torch-KWT)
+
 # Torch-KWT
 Unofficial PyTorch implementation of [*Keyword Transformer: A Self-Attention Model for Keyword Spotting*](https://arxiv.org/abs/2104.00769).
 
