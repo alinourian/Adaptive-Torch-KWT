@@ -16,7 +16,7 @@ from utils.augment import time_shift, resample, spec_augment
 from audiomentations import AddBackgroundNoise
 
 
-def get_train_val_test_split(root: str, val_file: str, test_file: str):
+def get_train_val_test_split(root: str, val_file: str, test_file: str, noises_snr: list):
     """Creates train, val, and test split according to provided val and test files.
 
     Args:
@@ -58,6 +58,24 @@ def get_train_val_test_split(root: str, val_file: str, test_file: str):
     all_files_set -= test_files_set
     
     train_list, val_list, test_list = list(all_files_set), list(val_files_set), list(test_files_set)
+        
+    for noise_snr in noises_snr:
+        ns = f'__{noise_snr}__'
+        temp = []
+        for x in train_list:
+            temp.append(x[:-4] + ns + '.wav')
+        train_list += temp
+
+        temp = []
+        for x in val_list:
+            temp.append(x[:-4] + ns + '.wav')
+        val_list += temp
+
+        temp = []
+        for x in test_list:
+            temp.append(x[:-4] + ns + '.wav')
+        test_list += temp
+        
     
     print(f"Number of training samples: {len(train_list)}")
     print(f"Number of validation samples: {len(val_list)}")
