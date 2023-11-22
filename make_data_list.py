@@ -6,10 +6,10 @@ import os
 
 def main(args):
 
-    if arges.noises_snr is None:
-        arges.noises_snr = []
+    if args.noises_snr is None:
+        args.noises_snr = []
     else:
-        arges.noises_snr = arges.noises_snr.split("-")
+        args.noises_snr = args.noises_snr.split("-")
 
     train_list, val_list, test_list, label_map = get_train_val_test_split(args.data_root, args.val_list_file, args.test_list_file, args.noises_snr)
 
