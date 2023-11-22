@@ -165,7 +165,7 @@ class FilterAttention(nn.Module):
 
 
 class KWT(nn.Module):
-    def __init__(self, input_res, patch_res, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 1, dim_head = 64, dropout = 0., emb_dropout = 0., pre_norm = True, adaptive_model: False, **kwargs):
+    def __init__(self, input_res, patch_res, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 1, dim_head = 64, dropout = 0., emb_dropout = 0., pre_norm = True, adaptive_model=False, **kwargs):
         super().__init__()
         
         num_patches = int(input_res[0]/patch_res[0] * input_res[1]/patch_res[1])
