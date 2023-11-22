@@ -16,7 +16,7 @@ from utils.augment import time_shift, resample, spec_augment
 from audiomentations import AddBackgroundNoise
 
 
-def get_train_val_test_split(root: str, val_file: str, test_file: str, noises_snr: list):
+def get_train_val_test_split(root: str, val_file: str, test_file: str, noises_snr=[]):
     """Creates train, val, and test split according to provided val and test files.
 
     Args:
