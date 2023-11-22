@@ -60,7 +60,7 @@ def get_train_val_test_split(root: str, val_file: str, test_file: str, noises_sn
     train_list, val_list, test_list = list(all_files_set), list(val_files_set), list(test_files_set)
         
     for noise_snr in noises_snr:
-        ns = f'__{noise_snr}__'
+        ns = '__' + noise_snr + '__'
         temp = []
         for x in train_list:
             temp.append(x[:-4] + ns + '.wav')
