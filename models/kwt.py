@@ -165,7 +165,7 @@ class FilterAttention(nn.Module):
 
 
 class KWT(nn.Module):
-    def __init__(self, input_res, patch_res, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 1, dim_head = 64, dropout = 0., emb_dropout = 0., pre_norm = True, **kwargs):
+    def __init__(self, input_res, patch_res, num_classes, dim, depth, heads, mlp_dim, pool = 'cls', channels = 1, dim_head = 64, dropout = 0., emb_dropout = 0., pre_norm = True, adaptive_model: False, **kwargs):
         super().__init__()
         
         num_patches = int(input_res[0]/patch_res[0] * input_res[1]/patch_res[1])
@@ -192,6 +192,7 @@ class KWT(nn.Module):
             nn.Linear(dim, num_classes)
         )
 
+        self.adaptive_model = adaptive_model
         self.filter_net = FilterAttention()
         self.n_fft = 480
         self.device = 'cuda'
@@ -230,50 +231,29 @@ class KWT(nn.Module):
         return filters
         
     def forward(self, x):
-        fm, bw = self.filter_net(x)
-
-        bs = fm.shape[0]
-        filters = self.create_filters(bs, fm, bw, donorm=False)
-
-        x_filtered = torch.matmul(filters, torch.transpose(x, 2, 3))
-
-        x_log = 10.0 * torch.log10(x_filtered + 1e-9)
-        x = torch.matmul(self.dct_filters, x_log)
-
-        # print(f'1. {x.shape}')
+        if self.adaptive_model:
+            fm, bw = self.filter_net(x)
+            bs = fm.shape[0]
+            filters = self.create_filters(bs, fm, bw, donorm=False)
+            x_filtered = torch.matmul(filters, torch.transpose(x, 2, 3))
+            x_log = 10.0 * torch.log10(x_filtered + 1e-9)
+            x = torch.matmul(self.dct_filters, x_log)
 
         x = self.to_patch_embedding(x)
-
-        # print(f'2. after patch embedding: {x.shape}')
         
         b, n, _ = x.shape
 
         cls_tokens = repeat(self.cls_token, '() n d -> b n d', b = b)
         x = torch.cat((cls_tokens, x), dim=1)
-
-        # print(f'3. after cat: {x.shape}')
-
         x += self.pos_embedding[:, :(n + 1)]
         x = self.dropout(x)
 
-        # print(f'4. after dropout: {x.shape}')
-
         x = self.transformer(x)
-
-        # print(f'5. after transformer: {x.shape}')
 
         x = x.mean(dim = 1) if self.pool == 'mean' else x[:, 0]
 
-        # print(f'6. after mean: {x.shape}')
-
         x = self.to_latent(x)
-
-        # print(f'7. after latent : {x.shape}')
-
         x = self.mlp_head(x)
-
-        # print(f'8. after mlp: {x.shape}')
-
         return x
 
 
