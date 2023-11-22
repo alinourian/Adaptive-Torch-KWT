@@ -58,23 +58,24 @@ def get_train_val_test_split(root: str, val_file: str, test_file: str, noises_sn
     all_files_set -= test_files_set
     
     train_list, val_list, test_list = list(all_files_set), list(val_files_set), list(test_files_set)
-        
+
+    temp_train = []
+    temp_val = []
+    temp_test = []
     for noise_snr in noises_snr:
         ns = '__' + noise_snr + '__'
-        temp = []
         for x in train_list:
-            temp.append(x[:-4] + ns + '.wav')
-        train_list += temp
+            temp_train.append(x[:-4] + ns + '.wav')
 
-        temp = []
         for x in val_list:
-            temp.append(x[:-4] + ns + '.wav')
-        val_list += temp
+            temp_val.append(x[:-4] + ns + '.wav')
 
-        temp = []
         for x in test_list:
-            temp.append(x[:-4] + ns + '.wav')
-        test_list += temp
+            temp_test.append(x[:-4] + ns + '.wav')
+
+    train_list += temp_train
+    val_list += temp_val
+    test_list += temp_test
         
     
     print(f"Number of training samples: {len(train_list)}")
