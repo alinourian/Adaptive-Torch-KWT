@@ -283,7 +283,7 @@ def get_loader(data_list, config, train=True):
         label_map = json.load(f)
 
     model_type = 0
-    if config["hparams"]["model]["adaptive_model"]:
+    if config["hparams"]["model"]["adaptive_model"]:
         model_type = 1
     
     dataset = GoogleSpeechDataset(
