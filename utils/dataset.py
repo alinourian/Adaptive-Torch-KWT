@@ -183,9 +183,9 @@ class GoogleSpeechDataset(Dataset):
             x = librosa.feature.mfcc(S=librosa.power_to_db(x), n_mfcc=self.audio_settings["n_mels"])\
         
         
-        if self.model_type == 0 and self.aug_settings is not None:
-            if "spec_aug" in self.aug_settings:
-                x = spec_augment(x, **self.aug_settings["spec_aug"])
+        # if self.aug_settings is not None:
+        #     if "spec_aug" in self.aug_settings:
+        #         x = spec_augment(x, **self.aug_settings["spec_aug"])
 
         x = torch.from_numpy(x).float().unsqueeze(0)
         return x
@@ -206,8 +206,19 @@ def frame_audio(audio, n_fft=480):
 
 
 def cache_item_loader(path: str, sr: int, cache_level: int, audio_settings: dict, window=None, model_type=0) -> np.ndarray:
-    x = librosa.load(path, sr=sr)[0]
     if cache_level == 2:
+        path_snr = path.split("__")
+        if length(snr) == 1:
+            x = librosa.load(path, sr=sr)[0]
+        else:
+            path = path_snr[0] + path_snr[-1]
+            noise_snr = int(path_snr[-2])
+            x = librosa.load(path, sr=sr)[0]
+            
+            RMS_2 = np.mean(x ** 2)
+            noise_sigma = np.sqrt(RMS_2 / 10 ** (noise_snr / 10))
+            x += np.random.normal(loc=0.0, scale=noise_sigma, size=audio.shape).astype(np.float32)
+        
         if model_type == 0:
             x = librosa.util.fix_length(x, size=sr)
             x = librosa.feature.melspectrogram(y=x, **audio_settings)        
