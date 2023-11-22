@@ -88,17 +88,26 @@ def get_train_val_test_split(root: str, val_file: str, test_file: str, noises_sn
 class GoogleSpeechDataset(Dataset):
     """Dataset wrapper for Google Speech Commands V2."""
     
-    def __init__(self, data_list: list, audio_settings: dict, label_map: dict = None, aug_settings: dict = None, cache: int = 0):
+    def __init__(
+        self, 
+        data_list: list, 
+        audio_settings: dict, 
+        label_map: dict = None, 
+        aug_settings: dict = None, 
+        cache: int = 0,
+        model_type: int = 0,
+    ):
         super().__init__()
 
         self.audio_settings = audio_settings
         self.aug_settings = aug_settings
         self.cache = cache
         self.n_fft = 480
+        self.model_type = model_type
 
         if cache:
             print("Caching dataset into memory.")
-            self.data_list = init_cache(data_list, audio_settings["sr"], cache, audio_settings)
+            self.data_list = init_cache(data_list, audio_settings["sr"], cache, audio_settings, model_type=self.model_type)
         else:
             self.data_list = data_list
         # self.data_list = data_list
@@ -127,8 +136,7 @@ class GoogleSpeechDataset(Dataset):
             x = self.data_list[idx]
         else:
             x = librosa.load(self.data_list[idx], sr=self.audio_settings["sr"])[0]
-
-        # print(f'1: {x.shape}')
+        
         x = self.transform(x)
 
         if self.label_list is not None:
@@ -174,12 +182,10 @@ class GoogleSpeechDataset(Dataset):
             x = librosa.feature.melspectrogram(y=x, **self.audio_settings)        
             x = librosa.feature.mfcc(S=librosa.power_to_db(x), n_mfcc=self.audio_settings["n_mels"])\
         
-        # print(x.shape)
-
-        # print(x.shape, type(x), x)
-        # if self.aug_settings is not None:
-        #     if "spec_aug" in self.aug_settings:
-        #         x = spec_augment(x, **self.aug_settings["spec_aug"])
+        
+        if self.model_type == 0 and self.aug_settings is not None:
+            if "spec_aug" in self.aug_settings:
+                x = spec_augment(x, **self.aug_settings["spec_aug"])
 
         x = torch.from_numpy(x).float().unsqueeze(0)
         return x
@@ -199,28 +205,30 @@ def frame_audio(audio, n_fft=480):
     return frames
 
 
-def cache_item_loader(path: str, sr: int, cache_level: int, audio_settings: dict, window=None) -> np.ndarray:
+def cache_item_loader(path: str, sr: int, cache_level: int, audio_settings: dict, window=None, model_type=0) -> np.ndarray:
     x = librosa.load(path, sr=sr)[0]
     if cache_level == 2:
-        # x = librosa.util.fix_length(x, size=sr)
-        # x = librosa.feature.melspectrogram(y=x, **audio_settings)        
-        # x = librosa.feature.mfcc(S=librosa.power_to_db(x), n_mfcc=audio_settings["n_mels"])
-        n_fft = 480
-        x = librosa.util.fix_length(x, size=sr)
-        audio = normalize_audio(x)
-        audio_framed = frame_audio(audio)
-        audio_win = audio_framed * window
-            # (3) fft
-        audio_winT = np.transpose(audio_win)
-        audio_fft = np.empty((int(1 + n_fft // 2), audio_winT.shape[1]), dtype=np.complex64, order='F')
-        for n in range(audio_fft.shape[1]):
-            audio_fft[:, n] = fft.fft(audio_winT[:, n], axis=0)[:audio_fft.shape[0]]
-        audio_fft = np.transpose(audio_fft)
-        x = np.square(np.abs(audio_fft))
+        if model_type == 0:
+            x = librosa.util.fix_length(x, size=sr)
+            x = librosa.feature.melspectrogram(y=x, **audio_settings)        
+            x = librosa.feature.mfcc(S=librosa.power_to_db(x), n_mfcc=audio_settings["n_mels"])
+        else:
+            n_fft = 480
+            x = librosa.util.fix_length(x, size=sr)
+            audio = normalize_audio(x)
+            audio_framed = frame_audio(audio)
+            audio_win = audio_framed * window
+                # (3) fft
+            audio_winT = np.transpose(audio_win)
+            audio_fft = np.empty((int(1 + n_fft // 2), audio_winT.shape[1]), dtype=np.complex64, order='F')
+            for n in range(audio_fft.shape[1]):
+                audio_fft[:, n] = fft.fft(audio_winT[:, n], axis=0)[:audio_fft.shape[0]]
+            audio_fft = np.transpose(audio_fft)
+            x = np.square(np.abs(audio_fft))
     return x
 
 
-def init_cache(data_list: list, sr: int, cache_level: int, audio_settings: dict, n_cache_workers: int = 4) -> list:
+def init_cache(data_list: list, sr: int, cache_level: int, audio_settings: dict, n_cache_workers: int = 4, model_type: int = 0) -> list:
     """Loads entire dataset into memory for later use.
 
     Args:
@@ -236,7 +244,7 @@ def init_cache(data_list: list, sr: int, cache_level: int, audio_settings: dict,
     cache = []
     window = get_window('hann', 480, fftbins=True)
 
-    loader_fn = functools.partial(cache_item_loader, sr=sr, cache_level=cache_level, audio_settings=audio_settings, window=window)
+    loader_fn = functools.partial(cache_item_loader, sr=sr, cache_level=cache_level, audio_settings=audio_settings, window=window, model_type=model_type)
 
     pool = mp.Pool(n_cache_workers)
 
@@ -263,12 +271,17 @@ def get_loader(data_list, config, train=True):
     with open(config["label_map"], "r") as f:
         label_map = json.load(f)
 
+    model_type = 0
+    if config["hparams"]["adaptive_model"]:
+        model_type = 1
+    
     dataset = GoogleSpeechDataset(
         data_list=data_list,
         label_map=label_map,
         audio_settings=config["hparams"]["audio"],
         aug_settings=config["hparams"]["augment"] if train else None,
-        cache=config["exp"]["cache"]
+        cache=config["exp"]["cache"],
+        model_type=model_type,
     )
 
     print(f'length of dataset: {dataset.__len__()}')
