@@ -208,7 +208,7 @@ def frame_audio(audio, n_fft=480):
 def cache_item_loader(path: str, sr: int, cache_level: int, audio_settings: dict, window=None, model_type=0) -> np.ndarray:
     if cache_level == 2:
         path_snr = path.split("__")
-        if length(snr) == 1:
+        if len(snr) == 1:
             x = librosa.load(path, sr=sr)[0]
         else:
             path = path_snr[0] + path_snr[-1]
