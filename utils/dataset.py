@@ -217,7 +217,7 @@ def cache_item_loader(path: str, sr: int, cache_level: int, audio_settings: dict
             
             RMS_2 = np.mean(x ** 2)
             noise_sigma = np.sqrt(RMS_2 / 10 ** (noise_snr / 10))
-            x += np.random.normal(loc=0.0, scale=noise_sigma, size=audio.shape).astype(np.float32)
+            x += np.random.normal(loc=0.0, scale=noise_sigma, size=x.shape).astype(np.float32)
         
         if model_type == 0:
             x = librosa.util.fix_length(x, size=sr)
