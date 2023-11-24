@@ -112,7 +112,8 @@ class PositionWiseFeedForward(nn.Module):
 class EncoderLayer(nn.Module):
     def __init__(self, d_model, num_heads, d_ff, dropout):
         super(EncoderLayer, self).__init__()
-        self.self_attn = nn.MultiheadAttention(d_model, num_heads, batch_first=True)
+        # self.self_attn = nn.MultiheadAttention(d_model, num_heads, batch_first=True)
+        self.self_attn = Attention(d_model, heads = num_heads, dim_head = d_ff, dropout = dropout)
         self.feed_forward = PositionWiseFeedForward(d_model, d_ff)
         self.norm1 = nn.LayerNorm(d_model)
         self.norm2 = nn.LayerNorm(d_model)
