@@ -120,7 +120,8 @@ class EncoderLayer(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
-        attn_output, attn_output_weights = self.self_attn(x)
+        # attn_output, attn_output_weights = self.self_attn(x, x, x)
+        attn_output = self.self_attn(x)
         x = self.norm1(x + self.dropout(attn_output))
         ff_output = self.feed_forward(x)
         x = self.norm2(x + self.dropout(ff_output))
